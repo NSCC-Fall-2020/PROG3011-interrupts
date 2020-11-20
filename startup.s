@@ -4,7 +4,7 @@
 	.thumb
 	.fpu softvfp
 
-	.global _vectors, _start
+	.global _vectors, _start, _print_ch
 
 	.section .vectors
 	.align 2
@@ -68,7 +68,22 @@ _vectors:
 
 	.type _start, %function
 _start:
+    ldr r0, =_stack_top
+    mov sp, r0
+
 	b main
+
+    .type _print_ch, %function
+
+_print_ch:
+    push { r0, r1 }         @ save old r0 and r1
+    mov  r1, r0             @ copy r0 (parameter) to r1
+    ldr  r0, =#3            @ set r0 to semihosting operation (e.g. #1)
+    bkpt 0xab               @ call semihosting service
+    pop  { r0, r1 }         @ restore old r0 and r1
+    bx   lr                 @ return to calling function
+
+    .size _print_ch, . - _print_ch
 
 	.end
 
