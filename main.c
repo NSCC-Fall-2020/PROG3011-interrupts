@@ -1,8 +1,11 @@
 #include <stdint.h>
 
 #define RCC_CR      (unsigned long *)0x40021000
+#define RCC_CFGR    (unsigned long *)0x40021008
 #define RCC_PLLCFGR (unsigned long *)0x4002100C
 #define RCC_IOPENR  (unsigned long *)0x40021034
+
+#define FLASH_ACR   (unsigned long *)0x40022000
 
 #define GPIOA_MODER (unsigned long *)0x50000000
 #define GPIOA_ODR   (unsigned long *)0x50000014
@@ -22,8 +25,13 @@ void print_ch(char ch)
 
 void main()
 {
+    /* switch SYSCLK to HSICLK */
+    uint32_t rcc_cfgr = *RCC_CFGR;
+    rcc_cfgr &= ~0x00000007UL;
+    *RCC_CFGR = rcc_cfgr;
+
     /* configure SYSCLK for 64MHz */
-#if 0
+
     /* disable PLL */
     *RCC_CR &= ~0x01000000UL;
 
@@ -32,8 +40,10 @@ void main()
 
     /* configure PLL variables */
     /* N=8, M=1, R=2 */
-    *RCC_PLLCFGR &= ~0xE0007F70UL;
-    *RCC_PLLCFGR |= 0x20000800UL;
+//    *RCC_PLLCFGR &= ~0xE0007F70UL;
+//    *RCC_PLLCFGR |= 0x20000800UL;
+    *RCC_PLLCFGR &= ~0xF0007F73UL;
+    *RCC_PLLCFGR |= 0x30000802UL;
 
     /* turn on PLL */
     *RCC_CR |= 0x01000000UL;
@@ -42,8 +52,22 @@ void main()
     while ( !(*RCC_CR & 0x02000000UL) );
 
     /* turn on PLLR output */
-    *RCC_PLLCFGR |= 0x10000000UL;
-#endif
+//    *RCC_PLLCFGR |= 0x10000000UL;
+
+    /* add wait states to FLASH */
+    uint32_t flash_acr = *FLASH_ACR;
+    flash_acr &= ~0x00000007UL;
+    flash_acr |= 0x00000002UL;
+    *FLASH_ACR = flash_acr;
+
+    /* wait for latency bits to change */
+    while( (*FLASH_ACR & 0x00000007UL) != 0x00000002UL );
+
+    /* switch SYSCLK to PLLRCLK */
+    rcc_cfgr = *RCC_CFGR;
+    rcc_cfgr &= ~0x00000007UL;
+    rcc_cfgr |= 0x00000002UL;
+    *RCC_CFGR = rcc_cfgr;
 
     /* enable register clocks for GPIOA and GPIOC */
     *RCC_IOPENR |= 0x00000005UL;
@@ -57,17 +81,14 @@ void main()
 
     while(1)
     {
-        /* check for user button to be pressed */
-        if( (*GPIOC_IDR & 0x2000UL) == 0) {
-            /* turn LED ON (PA5) */
-            *GPIOA_ODR |= 0x20UL;
-        } else {
-            /* turn LED OFF (PA5) */
-            *GPIOA_ODR &= ~0x20UL;
-        }
+        /* turn LED ON (PA5) */
+        *GPIOA_ODR |= 0x20UL;
 
-#ifndef NDEBUG
-        print_ch('X');
-#endif
+        for(uint32_t i=0; i<1000000; i++);
+
+        /* turn LED OFF (PA5) */
+        *GPIOA_ODR &= ~0x20UL;
+
+        for(uint32_t i=0; i<1000000; i++);
     }
 }
