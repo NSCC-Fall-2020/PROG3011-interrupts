@@ -17,6 +17,12 @@
 #define STK_RVR     (unsigned long *)0xE000E014
 #define STK_CVR     (unsigned long *)0xE000E018
 
+#define NVIC_ISER   (unsigned long *)0xE000E100
+#define NVIC_ICER   (unsigned long *)0xE000E180
+#define NVIC_ISPR   (unsigned long *)0xE000E200
+#define NVIC_ICPR   (unsigned long *)0xE000E280
+
+
 uint8_t num = 0x55;
 uint8_t num2;
 
@@ -25,6 +31,17 @@ extern void _print_ch(char *ptr);
 void print_ch(char ch)
 {
     _print_ch(&ch);
+}
+
+uint32_t ticks;
+void systick_handler()
+{
+    ticks++;
+}
+
+uint32_t millis()
+{
+    return ticks;
 }
 
 void delay(int ms)
@@ -82,8 +99,7 @@ void main()
     /* configure SysTick Timer for 1ms */
     *STK_RVR = 63999UL;
     *STK_CVR = 0UL;
-    *STK_CSR &= ~0x00000007UL;
-    *STK_CSR |= 0x00000005UL;
+    *STK_CSR |= 0x00000007UL;
 
     /* enable register clocks for GPIOA and GPIOC */
     *RCC_IOPENR |= 0x00000005UL;
@@ -95,19 +111,14 @@ void main()
     /* configure PC13 as input pin */
     *GPIOC_MODER &= ~0x0C000000UL;
 
+    uint32_t last_tick = millis();
     while(1)
     {
-        /* turn LED ON (PA5) */
-        *GPIOA_ODR |= 0x20UL;
-
-        /* use SysTick to wait for 1 sec */
-        delay(1000);
-
-        /* turn LED OFF (PA5) */
-        *GPIOA_ODR &= ~0x20UL;
-
-        /* use SysTick to wait for 1 sec */
-        delay(1000);
+        if ((millis() - last_tick) > 1000) {
+            /* toggle LED ON/OFF (PA5) */
+            *GPIOA_ODR ^= 0x20UL;
+            last_tick = millis();
+        }
 
     }
 }

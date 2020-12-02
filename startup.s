@@ -14,20 +14,20 @@ _vectors:
 	.long _stack_top
 	.long _start
 
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
+	.long 0                 @ NMI
+	.long 0                 @ HardFault
+	.long 0                 @ Reserved
+	.long 0                 @ Reserved
+	.long 0                 @ Reserved
+	.long 0                 @ Reserved
+	.long 0                 @ Reserved
+	.long 0                 @ Reserved
+	.long 0                 @ Reserved
+	.long 0                 @ SVC
+	.long 0                 @ Reserved
+	.long 0                 @ Reserved
+	.long 0                 @ PendSV
+	.long systick_handler   @ SysTick
 	.long 0
 	.long 0
 	.long 0
