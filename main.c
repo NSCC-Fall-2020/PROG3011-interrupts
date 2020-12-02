@@ -13,6 +13,10 @@
 #define GPIOC_MODER (unsigned long *)0x50000800
 #define GPIOC_IDR   (unsigned long *)0x50000810
 
+#define STK_CSR     (unsigned long *)0xE000E010
+#define STK_RVR     (unsigned long *)0xE000E014
+#define STK_CVR     (unsigned long *)0xE000E018
+
 uint8_t num = 0x55;
 uint8_t num2;
 
@@ -21,6 +25,12 @@ extern void _print_ch(char *ptr);
 void print_ch(char ch)
 {
     _print_ch(&ch);
+}
+
+void delay(int ms)
+{
+    while (ms > 0)
+        if (*STK_CSR & 0x10000UL) ms--;
 }
 
 void main()
@@ -69,6 +79,12 @@ void main()
     rcc_cfgr |= 0x00000002UL;
     *RCC_CFGR = rcc_cfgr;
 
+    /* configure SysTick Timer for 1ms */
+    *STK_RVR = 63999UL;
+    *STK_CVR = 0UL;
+    *STK_CSR &= ~0x00000007UL;
+    *STK_CSR |= 0x00000005UL;
+
     /* enable register clocks for GPIOA and GPIOC */
     *RCC_IOPENR |= 0x00000005UL;
 
@@ -84,11 +100,14 @@ void main()
         /* turn LED ON (PA5) */
         *GPIOA_ODR |= 0x20UL;
 
-        for(uint32_t i=0; i<1000000; i++);
+        /* use SysTick to wait for 1 sec */
+        delay(1000);
 
         /* turn LED OFF (PA5) */
         *GPIOA_ODR &= ~0x20UL;
 
-        for(uint32_t i=0; i<1000000; i++);
+        /* use SysTick to wait for 1 sec */
+        delay(1000);
+
     }
 }
