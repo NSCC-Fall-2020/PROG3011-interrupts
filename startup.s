@@ -28,14 +28,14 @@ _vectors:
 	.long 0                 @ Reserved
 	.long 0                 @ PendSV
 	.long systick_handler   @ SysTick
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
-	.long 0
+	.long 0                 @ WDG
+	.long 0                 @ PVD
+	.long 0                 @ RTC
+	.long 0                 @ Flash
+	.long 0                 @ RCC
+	.long 0                 @ EXTI 0/1
+	.long 0                 @ EXTI 2/3
+	.long exti4_15_handler  @ EXTI 4-15
 	.long 0
 	.long 0
 	.long 0

@@ -5,6 +5,15 @@
 #define RCC_PLLCFGR (unsigned long *)0x4002100C
 #define RCC_IOPENR  (unsigned long *)0x40021034
 
+#define EXTI        (unsigned long *)0x40021800
+#define EXTI_FTSR1   (unsigned long *)0x40021804
+#define EXTI_FPR1    (unsigned long *)0x40021810
+#define EXTI_EXTICR1 (unsigned long *)0x40021860
+#define EXTI_EXTICR2 (unsigned long *)0x40021864
+#define EXTI_EXTICR3 (unsigned long *)0x40021868
+#define EXTI_EXTICR4 (unsigned long *)0x4002186C
+#define EXTI_IMR1    (unsigned long *)0x40021880
+
 #define FLASH_ACR   (unsigned long *)0x40022000
 
 #define GPIOA_MODER (unsigned long *)0x50000000
@@ -37,6 +46,15 @@ uint32_t ticks;
 void systick_handler()
 {
     ticks++;
+}
+
+void exti4_15_handler()
+{
+    /* clear the pending interrupt */
+    *EXTI_FPR1 |= 0x00002000UL;
+
+    /* toggle LED ON/OFF (PA5) */
+    *GPIOA_ODR ^= 0x20UL;
 }
 
 uint32_t millis()
@@ -111,12 +129,25 @@ void main()
     /* configure PC13 as input pin */
     *GPIOC_MODER &= ~0x0C000000UL;
 
+    /* configure PC13 as external interrupt */
+    *EXTI_EXTICR4 &= ~0x0000FF00UL;
+    *EXTI_EXTICR4 |= 0x00000200UL;
+
+    /* configure EXTI13 to trigger on falling edge */
+    *EXTI_FTSR1 |= 0x00002000UL;
+
+    /* unmask the EXTI13 interrupt */
+    *EXTI_IMR1 |= 0x00002000UL;
+
+    /* enabling EXTI4-15 interrupt in the NVIC */
+    *NVIC_ISER = 0x00000080UL;
+
     uint32_t last_tick = millis();
     while(1)
     {
         if ((millis() - last_tick) > 1000) {
             /* toggle LED ON/OFF (PA5) */
-            *GPIOA_ODR ^= 0x20UL;
+            //*GPIOA_ODR ^= 0x20UL;
             last_tick = millis();
         }
 
